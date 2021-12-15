@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  django:
+    build:
+      context: .
+      dockerfile: ./compose/python/Dockerfile
+    image: django
+    depends_on: 
+      - postgres
+    volumes:
+      - .:/app
+      - ../src:/app/manager
+      - task_data:/app/app/task_manager/task_data/
+    env_file:
+      - ./.envs/.django
+    ports:
+      - "8000:8000"
+    command: /start
+  postgres:
+    image: postgres:9.6
+    volumes:
+     - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ./.envs/.postgres
+
+volumes:
+  postgres_data:
+  task_data:

@@ -1,0 +1,143 @@
+{% extends 'jobs/base.html' %}
+
+{% block content %}
+<h1>Edit job</h1>
+<form id="job-form" action="" enctype="multipart/form-data" method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  {% for step in steps %}
+  <div id="step-{{forloop.counter0}}" class="step-form" style="border: 1px solid black;">
+    <p><label for="step-{{forloop.counter0}}-name">Step name</label> <input id="step-{{forloop.counter0}}-name"
+        type="text" name="step-{{forloop.counter0}}-name" maxlength="100" required
+        value="step{{forloop.counter0|add:1}}"></p>
+    <p><button type="button" id="add-task">Add Task</button></p>
+    {% for task in step %}
+    <div id="step-{{forloop.parentloop.counter0}}-task-{{forloop.counter0}}" class="task-form"
+      style="border: 1px solid green;">
+      <p><label for="step-{{forloop.parentloop.counter0}}-task-{{forloop.counter0}}-type">Type:</label>
+        <select name="step-{{forloop.parentloop.counter0}}-task-{{forloop.counter0}}-type"
+          id="step-{{forloop.parentloop.counter0}}-task-{{forloop.counter0}}-type">
+          <option value="" disabled="">----Select task please-----</option>
+          {% for task_item in all_tasks %}
+          {% if task_item.task_type == task.task_type %}
+          <option value={{task_item.task_type}} selected>{{task_item.task_type}}</option>
+          {% else %}
+          <option value={{task_item.task_type}} >{{task_item.task_type}}</option>
+          {% endif %}
+          {% endfor %}
+        </select>
+      </p>
+      <p><label for="step-{{forloop.parentloop.counter0}}-task-{{forloop.counter0}}-name">Name:</label> <input
+          type="text" name="step-{{forloop.parentloop.counter0}}-task-{{forloop.counter0}}-name" maxlength="100"
+          id="step-{{forloop.parentloop.counter0}}-task-{{forloop.counter0}}-name" value={{task.task_name}}></p>
+      <p><label for="step-{{forloop.parentloop.counter0}}-task-{{forloop.counter0}}-args">Args:</label> <input
+          type="text" name="step-{{forloop.parentloop.counter0}}-task-{{forloop.counter0}}-args" maxlength="100"
+          id="step-{{forloop.parentloop.counter0}}-task-0-args" value={{task.args}}></p>
+      <p><label for="step-{{forloop.parentloop.counter0}}-task-{{forloop.counter0}}-kwargs">Kwargs:</label> <input
+          type="text" name="step-{{forloop.parentloop.counter0}}-task-{{forloop.counter0}}-kwargs" maxlength="100"
+          id="step-{{forloop.parentloop.counter0}}-task-{{forloop.counter0}}-kwargs" value={{task.kwargs}}></p>
+      <p><label for="step-{{forloop.parentloop.counter0}}-task-{{forloop.counter0}}-file_field">File field:</label>
+        <input type="file" name="step-{{forloop.parentloop.counter0}}-task-{{forloop.counter0}}-file_field" multiple=""
+          id="step-{{forloop.parentloop.counter0}}-task-{{forloop.counter0}}-file_field">
+      </p>
+      <p><button type="button" class="task-delete">Delete task</button></p>
+    </div>
+    {% endfor %}
+    <p><button type="button" class="step-delete">Delete step</button></p>
+  </div>
+  {% endfor %}
+  <input type="submit" value="Update">
+</form>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"
+  integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script>
+  // var steps = JSON.parse("{{steps|escapejs}}");
+  // loadDataForEdit(steps)
+
+  // function loadDataForEdit(steps) {
+  //   for (var i = 0; i < steps.length; i++) {
+  //     $(`<p><button type="button" id="add-step">Add Step</button></p>
+  //       <div id="step-${i}" class="step-form" style="border: 1px solid black;">
+  //       <p><label for="step-${i}-name">Step name</label> <input id="step-${i}-name" type="text" name="step-${i}-name" maxlength="100"
+  //           required value='step${i+1}'></p>
+  //       <p><button type="button" id="add-task">Add Task</button></p>
+  //       %tasks%
+  //       <p><button type="button" class="step-delete">Delete step</button></p>
+  //       </div>`).appendTo('#job-form')
+  //       for (var j = 0; j < steps[i].length; j++){
+  //         console.log(steps[i][j])
+  //       }
+  //   }
+  // }
+
+  const stepForms = $(".step-form")
+  let stepFormCount = stepForms.length - 1;
+  const submitFormBtn = document.querySelector('[type="submit"]');
+  const jobForm = document.querySelector("#job-form")
+
+  const taskForms = $(".task-form")
+
+  function updateStepForms() {
+    let count = 0;
+    for (let form of stepForms) {
+      const formRegex = RegExp(`step-(\\d){1}`, 'g');
+      form.innerHTML = form.innerHTML.replace(formRegex, `step-${count++}`)
+    }
+  }
+
+  function updateTaskForms(stepId) {
+    let count = 0;
+    stepTaskForms = $(`#${stepId}`).find('.task-form')
+    for (let form of stepTaskForms) {
+      const formRegex = RegExp(`${stepId}-task-(\\d){1}`, 'g');
+      form.id = `${stepId}-task-${count}`;
+      form.innerHTML = form.innerHTML.replace(formRegex, `${stepId}-task-${count}`)
+      count++;
+    }
+  }
+
+
+
+  $("#add-step").on("click", function () {
+    const newStepForm = stepForms[0].cloneNode(true);
+    stepFormCount++;
+    const formRegex = RegExp(`step-(\\d){1}`, 'g');
+    newStepForm.innerHTML = newStepForm.innerHTML.replace(formRegex, `step-${stepFormCount}`)
+    newStepForm.id = `step-${stepFormCount}`
+    jobForm.insertBefore(newStepForm, submitFormBtn);
+  })
+
+  $("#job-form").on("click", function (event) {
+    if (event.target.classList.contains("step-delete")) {
+      event.preventDefault();
+      event.target.parentElement.parentElement.remove();
+      stepFormCount--;
+      updateStepForms();
+    }
+    if (event.target.classList.contains("task-delete")) {
+      event.preventDefault();
+      const parentStep = event.target.parentElement.parentElement.parentElement;
+      parentStepId = parentStep.id
+      event.target.parentElement.parentElement.remove();
+      console.log(parentStep)
+      updateTaskForms(parentStepId)
+    }
+  })
+
+  $("#add-task").on("click", function (event) {
+    const newTaskForm = taskForms[0].cloneNode(true);
+    const parentStep = event.target.parentElement.parentElement
+    parentStepId = parentStep.id
+    taskFormCount = $(`#${parentStepId}`).find('.task-form').length - 1
+    taskFormCount++;
+    const formRegex = RegExp(`${parentStepId}-task-(\\d){1}`, 'g');
+    newTaskForm.id = `${parentStepId}-task-${taskFormCount}`;
+    newTaskForm.innerHTML = newTaskForm.innerHTML.replace(formRegex, `${parentStepId}-task-${taskFormCount}`)
+
+    deleteStepBtn = $(`#${parentStepId}`).find('.task-form')[0]
+    parentStep.insertBefore(newTaskForm, deleteStepBtn);
+  })
+
+</script>
+{% endblock content %}

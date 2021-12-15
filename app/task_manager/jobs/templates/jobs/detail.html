@@ -1,0 +1,12 @@
+{% extends 'jobs/base.html' %}
+ 
+{% block content %}
+  <div>
+    <h2>{{ job.name }}</h2>
+    <p>{{ job.config }}</p>
+    <p>{{ job.start_time }}</p>
+  </div>
+ 
+  <a href='{% url 'job_edit' job.pk %}'> Edit Job</a>
+  <p><a href="{% url 'job_delete' job.pk %}"> Delete Job</a></p>
+{% endblock content %}

@@ -1,0 +1,108 @@
+{% extends 'jobs/base.html' %}
+
+{% block content %}
+<h1>New job</h1>
+<form id="job-form" action="" enctype="multipart/form-data" method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <p><button type="button" id="add-step">Add Step</button></p>
+  <div id="step-0" class="step-form" style="border: 1px solid black;">
+    <p><label for="step-0-name">Step name</label> <input id="step-0-name" type="text" name="step-0-name" maxlength="100"
+        required></p>
+    <p><button type="button" id="add-task">Add Task</button></p>
+    <div id="step-0-task-0" class="task-form" style="border: 1px solid green;">
+      <p><label for="step-0-task-0-type">Type:</label>
+        <select name="step-0-task-0-type" id="step-0-task-0-type">
+          <option value="" disabled selected="">----Select task please-----</option>
+          {% for task in tasks %}
+          <option value={{task.task_type}}>{{task.task_type}}</option>
+          {% endfor %}
+        </select>
+      </p>
+      <p><label for="step-0-task-0-name">Name:</label> <input type="text" name="step-0-task-0-name" maxlength="100"
+        id="step-0-task-0-name"></p>
+      <p><label for="step-0-task-0-args">Args:</label> <input type="text" name="step-0-task-0-args" maxlength="100"
+          id="step-0-task-0-args"></p>
+      <p><label for="step-0-task-0-kwargs">Kwargs:</label> <input type="text" name="step-0-task-0-kwargs"
+          maxlength="100" id="step-0-task-0-kwargs"></p>
+      <p><label for="step-0-task-0-file_field">File field:</label> <input type="file" name="step-0-task-0-file_field"
+          multiple="" id="step-0-task-0-file_field"></p>
+      <p><button type="button" class="task-delete">Delete task</button></p>
+    </div>
+    <p><button type="button" class="step-delete">Delete step</button></p>
+  </div>
+  <input type="submit" value="Submit">
+</form>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"
+  integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script>
+  const stepForms = $(".step-form")
+  let stepFormCount = stepForms.length - 1;
+  const submitFormBtn = document.querySelector('[type="submit"]');
+  const jobForm = document.querySelector("#job-form")
+
+  const taskForms = $(".task-form")
+
+  function updateStepForms() {
+    let count = 0;
+    for (let form of stepForms) {
+      const formRegex = RegExp(`step-(\\d){1}`, 'g');
+      form.innerHTML = form.innerHTML.replace(formRegex, `step-${count++}`)
+    }
+  }
+
+  function updateTaskForms(stepId) {
+    let count = 0;
+    stepTaskForms = $(`#${stepId}`).find('.task-form')
+    for (let form of stepTaskForms) {
+      const formRegex = RegExp(`${stepId}-task-(\\d){1}`, 'g');
+      form.id = `${stepId}-task-${count}`;
+      form.innerHTML = form.innerHTML.replace(formRegex, `${stepId}-task-${count}`)
+      count++;
+    }
+  }
+
+
+
+  $("#add-step").on("click", function () {
+    const newStepForm = stepForms[0].cloneNode(true);
+    stepFormCount++;
+    const formRegex = RegExp(`step-(\\d){1}`, 'g');
+    newStepForm.innerHTML = newStepForm.innerHTML.replace(formRegex, `step-${stepFormCount}`)
+    newStepForm.id = `step-${stepFormCount}`
+    jobForm.insertBefore(newStepForm, submitFormBtn);
+  })
+
+  $("#job-form").on("click", function (event) {
+    if (event.target.classList.contains("step-delete")) {
+      event.preventDefault();
+      event.target.parentElement.parentElement.remove();
+      stepFormCount--;
+      updateStepForms();
+    }
+    if (event.target.classList.contains("task-delete")) {
+      event.preventDefault();
+      const parentStep = event.target.parentElement.parentElement.parentElement;
+      parentStepId = parentStep.id
+      event.target.parentElement.parentElement.remove();
+      console.log(parentStep)
+      updateTaskForms(parentStepId)
+    }
+  })
+
+  $("#add-task").on("click", function (event) {
+    const newTaskForm = taskForms[0].cloneNode(true);
+    const parentStep = event.target.parentElement.parentElement
+    parentStepId = parentStep.id
+    taskFormCount = $(`#${parentStepId}`).find('.task-form').length - 1
+    taskFormCount++;
+    const formRegex = RegExp(`${parentStepId}-task-(\\d){1}`, 'g');
+    newTaskForm.id = `${parentStepId}-task-${taskFormCount}`;
+    newTaskForm.innerHTML = newTaskForm.innerHTML.replace(formRegex, `${parentStepId}-task-${taskFormCount}`)
+
+    deleteStepBtn = $(`#${parentStepId}`).find('.task-form')[0]
+    parentStep.insertBefore(newTaskForm, deleteStepBtn);
+  })
+  
+</script>
+{% endblock content %}
